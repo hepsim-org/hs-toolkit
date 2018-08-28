@@ -1,0 +1,33 @@
+#!/bin/bash
+# HepSim toolkit.
+# S.Chekanov (ANL)
+# Task: Run a Jython script in a batch mode. 
+
+export MAXMEM=2048
+
+
+export HEPSIM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+if which java >/dev/null; then
+    _java=java
+elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+    _java="$JAVA_HOME/bin/java"
+else
+    echo "No java detected! Please install it from https://java.com/download"; exit 0
+fi
+
+
+if [ "$#" -eq 0 ]
+then
+  echo "Usage:  hs-run script.py [arguments]"
+  exit 1
+fi
+
+
+# Note: We load proio first to make sure that we have the most updated com/google/protobuf needed fro ProIO 
+# This is not a satisfactory solution but it works in this case 
+
+$_java -Xms${MAXMEM}m -Xmx${MAXMEM}m \
+       -cp $HEPSIM_DIR/browser_proio.jar:$HEPSIM_DIR/browser_promc.jar:$HEPSIM_DIR/hepsim.jar:$HEPSIM_DIR/jython.jar:$HEPSIM_DIR/modules.jar \
+       -Dpython.cachedir=/tmp/jython_cache \
+       -Dpython.home=./ org.python.util.jython $@

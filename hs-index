@@ -1,0 +1,61 @@
+#!/bin/bash
+# HepSim toolkit.
+# S.Chekanov (ANL)
+# Task: Index files and prepare the directory for the includion inside HepSim
+
+if [[ -z "${HEPSIM_DIR}" ]]; then
+   echo "HEPSIM_DIR variable is unset"
+   echo "Exit.."
+   exit 1;
+else
+   echo "hs-tools is set from $HEPSIM_DIR"
+fi
+
+
+if [ $# -eq 0 ]
+  then
+    echo "No arguments supplied. You should pass the directory name, such as 'events/ee/'"
+    echo "Exit.."
+    exit 1;
+fi
+
+export DIR=$1
+
+# real path
+export DIR=$(readlink -f $DIR)
+
+# check the directory
+if [ ! -d "$DIR" ]; then
+   echo "Directory $DIR does not exist!"
+   echo "Exit.."
+   exit 1;
+fi
+
+if [[ ! $DIR == *"events"* ]]; 
+  then
+    echo "The directory for indexing should contain 'events'. Example: 'events/ee/'"
+    echo "Exit.."
+    exit 1;
+fi
+chmod -R 755 $DIR/
+
+
+read -r -p "Are you sure to index $DIR? [y/N] " response
+if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]
+then
+    echo "ok, indexing $DIR" 
+    find $DIR -type f -name "files*" -exec rm -f {} \;
+    find $DIR -name "*~" -delete
+    find $DIR -type f -name "dirs.i*" -exec rm -f {} \;
+    $HEPSIM_DIR/scripts/Make_sets $DIR
+    echo "Created index files from $DIR"
+    $HEPSIM_DIR/scripts/Make_metadata $DIR
+    echo "Rebuild ProMC metafile.txt from $DIR" 
+    $HEPSIM_DIR/scripts/Make_promc_info $DIR
+    find $DIR -type d -exec cp -f $HEPSIM_DIR/scripts/index.php {} \;
+
+
+else
+    echo "Exit since you say no.." 
+    exit 1;
+fi

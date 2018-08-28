@@ -1,0 +1,20 @@
+#!/bin/bash
+# S.Chekanov (ANL)
+# Download HepSim files from any URL mirror
+
+export HEPSIM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+
+export MAXMEM=2048
+
+
+if which java >/dev/null; then
+    _java=java
+elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+    _java="$JAVA_HOME/bin/java"
+else
+    echo "No java detected! Please install it from https://java.com/download"; exit 0
+fi
+
+
+$_java -Xms${MAXMEM}m -Xmx${MAXMEM}m -cp $HEPSIM_DIR/browser_promc.jar hepsim.GetMirrors "$@" 

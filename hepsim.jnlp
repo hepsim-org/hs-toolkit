@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jnlp codebase="http://atlaswww.hep.anl.gov/asc/hepsim/" 
+        href="hepsim.jnlp">
+    <information>
+        <title>HepSim</title>
+         <vendor>asc.anl.hep</vendor>
+         <description>HepSim analyser</description>
+          <offline-allowed/>
+    </information>
+
+  <security>
+      <all-permissions/>
+  </security>
+    <resources>
+          <j2se version="1.7+"/>
+          <jar href="hepsim_web.jar"/>
+    </resources>
+    <application-desc main-class="jhepsim.Main"/>
+</jnlp>
+

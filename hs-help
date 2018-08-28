@@ -1,0 +1,9 @@
+#!/bin/bash
+# S.Chekanov (ANL)
+# Task: show help
+
+export HEPSIM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+VERSION=`cat $HEPSIM_DIR/version`
+echo "HepSim toolkit version: $VERSION"
+cat $HEPSIM_DIR/help.txt

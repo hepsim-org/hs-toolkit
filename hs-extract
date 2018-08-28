@@ -1,0 +1,20 @@
+#!/bin/bash
+# HepSim toolkit. S.Chekanov (ANL) 
+# Task: Extract N events and put them to a separate file
+
+export HEPSIM_DIR=$(dirname $0)
+
+if which java >/dev/null; then
+    _java=java
+elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+    _java="$JAVA_HOME/bin/java"
+else
+    echo "No java detected! Please install it from https://java.com/download"; exit 0
+fi
+
+
+# argument list:
+# 1st:  signal.promc  - signal file
+# 2nd:  N - Number of events to extract
+
+$_java -Xms1024m -Xmx1024m -cp $HEPSIM_DIR/browser_promc.jar hepsim.Extract "$@" 

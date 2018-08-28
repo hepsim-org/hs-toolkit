@@ -1,0 +1,149 @@
+#!/bin/bash
+# Create metadata file
+# S.Chekanov (ANL)
+
+"exec" "python2" "-Wignore" "$0" "$@"
+
+__version__ = '1.4'
+__author__  = 'Sergei Chekanov  (chekanov@hep.anl.gov)'
+__doc__     = 'Make metadata files'
+
+import os,stat,sys
+import zipfile
+
+def listdirs(folder):
+    return [d for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d))]
+
+
+DIR="";
+if len(sys.argv) < 2: 
+   DIR="events/"
+if len(sys.argv) ==2:
+   DIR=sys.argv[1]
+
+print "Generate files from:  "+DIR
+
+import os
+def walker (dir,extension):
+  files=[]
+  def walk( dir, process):
+   for f in os.listdir( dir ):
+    fpath = os.path.join( dir, f)
+    if os.path.isdir(fpath) and not os.path.islink(fpath):
+       walk( fpath, process )
+    if os.path.isfile( fpath ):
+       if (extension == "*") : files.append(fpath)
+       if (extension != "*") :
+          if fpath.find(extension)>-1:
+             files.append(fpath)
+       
+  walk(dir,files)
+  return files
+
+# write to file
+list=walker(DIR,"promc")
+
+# also LHE.GZ files
+list1=walker(DIR,".lhe.gz")
+list=list+list1
+
+
+list.sort()
+
+
+output = set()
+for x in list:
+    head, tail = os.path.split(x)
+    # exclude
+    #if (head.find("qcd_pythia8_pt2700")>-1): continue;
+    #if (head.find("mg5")>-1 or head.find("pythia")>-1 or head.find("herwig")>-1): 
+    output.add(head)
+    
+f=open("datasets.in","w")
+for j in output:
+     f.write(j+"\n")
+f.close() 
+print "datasets.in is done!"
+
+import datetime
+today = datetime.date.today()
+# read it back
+lines = [line.rstrip('\n') for line in open("datasets.in")]
+for j in range(len(lines)):
+        #list all files
+        fpromc=[]
+        for file in os.listdir(lines[j]):
+             if file.endswith(".promc") or file.endswith(".lhe.gz"):
+                   fpromc.append(file)
+        fpromc.sort()
+        # run again
+        f=open('files','w')
+        # f.write("# "+str(today)+"\n")
+        f.write("# promc_files\n")
+        for file in fpromc:
+              b = os.path.getsize(lines[j]+"/"+file)
+              f.write(str(b)+" "+file+"\n") 
+        f.close() 
+        print "Create=",lines[j]+"/files.zip"
+        #fzip=zipfile.ZipFile(lines[j]+"/files.zip", 'w')
+        #fzip.write("files")
+        #fzip.close()
+        os.system("zip --quiet files.zip files")
+        os.system("mv -f files.zip "+lines[j]+"/files.zip") 
+        os.remove("files")
+        # build directory list
+        directories=listdirs(lines[j])
+        f=open(lines[j]+'/dirs.idx','w')
+        for xd in directories:
+              f.write(xd+"/\n")
+        f.close()
+        os.system("chmod 755 "+lines[j]+"/*")
+        # we also need to make index file at least 1level up in case complex datasets
+        lastind=lines[j].rfind('/')
+        xxdir=lines[j]
+        if (lastind>-1): 
+                 xxdir=xxdir[0:lastind] 
+                 xxdirectories=listdirs(xxdir)
+                 xxdirectories.sort()
+                 if (len(xxdirectories)>1):
+                    f=open(xxdir+'/dirs.idx','w')
+                    for xd in xxdirectories:
+                          f.write(xd+"/\n")
+                    f.close()
+                    os.system("chmod 755 "+xxdir+"/*")
+        # now go inside the directories and create ROOT index files
+        for xd in directories:
+             xdir=lines[j]+"/"+xd
+             # create files with macros and images
+             if (xd.endswith("macros")):
+                      images=[]
+                      for file in os.listdir(lines[j]+"/"+xd):
+                         images.append(file)
+                      images.sort()
+                      f=open(lines[j]+"/"+xd+"/files",'w')
+                      for file in images:
+                          f.write(file+"\n")
+                      f.close()
+             # find reconstructed files
+             if (xd.startswith("rf")):
+                      reco_files=[]
+                      for file in os.listdir(lines[j]+"/"+xd):
+                         if file.endswith(".root")==True or file.endswith(".slcio")==True or file.endswith(".gz")==True:
+                             reco_files.append(file)
+                      reco_files.sort()
+                      f=open('files','w')
+                      for file in reco_files:
+                           b = os.path.getsize(lines[j]+"/"+xd+"/"+file)
+                           f.write(str(b)+" "+file+"\n")
+                      f.close()
+                      # fzip=zipfile.ZipFile(lines[j]+"/"+xd+"/files.zip", 'w')
+                      # fzip.write("files")
+                      # fzip.close()
+                      os.system("zip --quiet files.zip files")
+                      os.system("mv -f files.zip "+lines[j]+"/"+xd+"/files.zip")
+                      os.remove("files")
+                      os.chmod(lines[j]+"/"+xd+"/files.zip",stat.S_IROTH)
+             os.system("chmod 755 "+lines[j]+"/"+xd+"/*")
+
+
+

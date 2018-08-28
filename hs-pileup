@@ -1,0 +1,29 @@
+#!/bin/bash
+# HepSim toolkit. S.Chekanov (ANL) 
+# Task: Mix signal events with pileup events
+
+export HEPSIM_DIR=$(dirname $0)
+
+if which java >/dev/null; then
+    _java=java
+elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+    _java="$JAVA_HOME/bin/java"
+else
+    echo "No java detected! Please install it from https://java.com/download"; exit 0
+fi
+
+if [[ "$_java" ]]; then
+    version=$("$_java" -version 2>&1 | awk -F '"' '/version/ {print $2}')
+    if [[ "$version" < "1.7" ]]; then
+        echo "Java version is less than 1.7. Please update it."; exit 0;
+    fi
+fi
+
+# argument list:
+# 1st:  pN - mix N events using a Poisson distribution
+#          - if "p" missing, use a constant number
+# 2nd:  signal.promc  - signal file
+# 3rd   minbias.promc - file with min bias events 
+# 4th   ouput.promc   - ouput file with mixed events
+# barcode indicates particle origin. 0 means the signal event.
+$_java -Xms1024m -Xmx1024m -cp $HEPSIM_DIR/browser_promc.jar hepsim.MixPileup "$@" 

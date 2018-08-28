@@ -1,0 +1,20 @@
+#!/bin/bash
+# HepSim toolkit. S.Chekanov (ANL) 
+# Task: Convert any ProMC file to zip64 
+
+export HEPSIM_DIR=$(dirname $0)
+
+if which java >/dev/null; then
+    _java=java
+elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+    _java="$JAVA_HOME/bin/java"
+else
+    echo "No java detected! Please install it from https://java.com/download"; exit 0
+fi
+
+
+# argument list:
+# 1st:  signal.promc  - input file
+# Output: signal_zip64.promc
+
+$_java -Xms1024m -Xmx1024m -cp $HEPSIM_DIR/browser_promc.jar hepsim.Zip64 "$@" 

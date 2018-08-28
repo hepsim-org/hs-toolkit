@@ -1,0 +1,49 @@
+#!/bin/bash
+# HepSim toolkit. S.Chekanov (ANL) 
+# Task: View HepSim files
+
+export HEPSIM_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+export MAXMEM=1024
+
+if which java >/dev/null; then
+    _java=java
+elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+    _java="$JAVA_HOME/bin/java"
+else
+    echo "No java detected! Please install it from https://java.com/download"; exit 0
+fi
+
+
+if [ "$#" -ne 1 ]; then
+    echo "Pass the file name on the local disk (or http) to browser events"
+    $_java -jar $HEPSIM_DIR/browser_promc.jar 
+    exit 0; 
+fi
+
+
+MFILE=$1
+
+if [[ "${MFILE##*.}" = "promc" ]] 
+then
+  if [[ $MFILE == *mcfm* || $MFILE == *jetphox* ]]
+  then
+   echo "NLO file was found. Wait.."
+   $_java -Xms${MAXMEM}m -Xmx${MAXMEM}m -cp $HEPSIM_DIR/browser_promc.jar probrowser.NLO "$@" 
+  else
+   echo "ProMC Monte Carlo file was found. Wait.."
+   $_java -jar $HEPSIM_DIR/browser_promc.jar "$@"
+  fi
+fi
+
+
+
+if [[  "${MFILE##*.}" = "proio" ]]
+then
+   echo "ProIO Monte Carlo file was found. Wait.."
+   $_java -jar $HEPSIM_DIR/browser_proio.jar "$@"
+fi
+
+
+
+

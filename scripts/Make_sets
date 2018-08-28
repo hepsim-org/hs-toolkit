@@ -1,0 +1,57 @@
+#!/bin/bash
+# Look at all directories and make file lists
+# S.Chekanov (ANL)
+
+"exec" "python2" "-Wignore" "$0" "$@"
+
+__version__ = '1.4'
+__author__  = 'Sergei Chekanov  (chekanov@hep.anl.gov)'
+__doc__     = 'Create file lists inside directories'
+
+import sys
+
+DIR="";
+if len(sys.argv) < 2: 
+   DIR="events/"
+if len(sys.argv) ==2:
+   DIR=sys.argv[1]
+
+print "Generate files from:  "+DIR
+
+import os
+def walker (dir,extension):
+  files=[]
+  def walk( dir, process):
+   for f in os.listdir( dir ):
+    fpath = os.path.join( dir, f)
+    if os.path.isdir(fpath) and not os.path.islink(fpath):
+       walk( fpath, process )
+    if os.path.isfile( fpath ):
+       if (extension == "*") : files.append(fpath)
+       if (extension != "*") :
+          if fpath.find(extension)>-1:
+             files.append(fpath)
+       
+  walk(dir,files)
+  return files
+
+# write to file
+list=walker(DIR,"promc")
+list.sort()
+
+output = set()
+for x in list:
+    head, tail = os.path.split(x)
+
+    # exclude
+    if (head.find("qcd_pythia8_pt2700")>-1): continue;
+
+    #if (head.find("mg5")>-1 or head.find("pythia")>-1 or head.find("herwig")>-1): 
+    output.add(head)
+    
+
+f=open("datasets.in","w")
+f.write('\n'.join(output))
+f.write('\n')
+f.close()
+print "datasets.in is done!"

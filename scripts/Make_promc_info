@@ -1,0 +1,85 @@
+#!/bin/bash
+# Make info files
+# S.Chekanov (ANL)  
+
+CURRENT_DIR=`pwd`
+DIR_PROCCESS="./events/"
+
+if [ $# -eq 1 ]
+  then
+     DIR_PROCCESS=$1
+     echo "Directory = $DIR" 
+fi
+
+filename=$CURRENT_DIR"/datasets.in"
+
+echo "Process=$filename"
+mm=0
+while read -r line
+do
+    xname=$line
+    myarray[$mm]=$xname # Populate array.
+    echo "Processing=$xname"
+    PROMC_OUT=$xname
+    ## look at the files
+    declare -a filearray
+    n=0
+    echo $xname
+    for name in $PROMC_OUT/*.promc
+    do
+     filearray[$n]=$name # Populate array.
+    let "n = $n + 1"
+    done
+    file=${filearray[0]}
+    hs-meta $file > metadata.txt
+    echo "n-promc-files = $n" >> metadata.txt
+    #CHECK1=`find $PROMC_OUT/  -type f -name "*.promc" -exec du -ck {} + | grep total |  cut -f1`
+    #CHECK2=`find $PROMC_OUT/  -type f -name "*.root" -exec du -ck {} + | grep total |  cut -f1`
+    CHECK1=`du -c $PROMC_OUT/*.promc | grep total |  cut -f1`
+    CHECK2=`find  $PROMC_OUT/  -iname "*.root" -ls |perl -lane '$t += $F[6]; print $t/1 . ""' | tail -n 1`
+    CHECK3=`find  $PROMC_OUT/  -iname "*.slcio" -ls |perl -lane '$t += $F[6]; print $t/1 . ""' | tail -n 1`
+    # CHECK=`du -sh $OUT | cut -f1`
+    echo "promc_size_kb = $CHECK1" >> metadata.txt
+    echo "promc_root_kb = $CHECK2" >> metadata.txt
+    echo "promc_slcio_kb = $CHECK3" >> metadata.txt
+
+  n=0
+  RDIR=""
+  RDIR_SIZE=""
+  RDIR_TOT_SIZE=0
+  RDIR_NR=""
+  RDIR_TIME=""
+  for name in $PROMC_OUT/r*/
+  do
+   if [ -d "$name" ]; then
+    xpath=${name%/*}
+    xbase=${name##*/}
+    xfext=${xbase##*.}
+    xpref=${xbase%.*}
+    part1=`dirname $name`
+    part2=`basename $name`
+    RDIR="$part2;$RDIR"
+    # part3=`du -sk $name | cut -f1` # size in kbytes 
+    part3=`du -c $name/* | grep total |  cut -f1`
+    part4=`ls -1 $name/* | wc -l`
+    part5=`stat -c %Y $name/info.txt`
+    RDIR_SIZE="$part3;$RDIR_SIZE" # size in kb 
+    RDIR_NR="$part4;$RDIR_NR"     # number of files 
+    RDIR_TIME="$part5;$RDIR_TIME" # timestamp  
+    let "n = $n + 1"
+    let "RDIR_TOT_SIZE = $RDIR_TOT_SIZE + $part3"
+   fi
+  done
+  # echo "Direct=$n"
+  echo "reco_dirs     = $RDIR" >> metadata.txt
+  echo "reco_dirs_sizes_kb    = $RDIR_SIZE" >> metadata.txt
+  echo "reco_dirs_tot_size_kb    = $RDIR_TOT_SIZE" >> metadata.txt
+  echo "reco_file_number    = $RDIR_NR" >> metadata.txt
+  echo "reco_timestamp    = $RDIR_TIME" >> metadata.txt
+  echo "metadata.txt is ready" 
+  mv   metadata.txt $PROMC_OUT/metadata.txt
+
+  let "mm = $mm + 1"
+done < "$filename"
+
+

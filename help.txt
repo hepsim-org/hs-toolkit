@@ -1,0 +1,52 @@
+
+Commands:
+=========
+hs-find     - find a URL of a MC sample 
+hs-get      - download MC samples in multiple threads (all mirrors) 
+hs-getmain  - download MC samples in multiple threads (main server) 
+hs-info     - validate the ProMC/ProIO file or dump separate events   
+hs-meta     - extract metadata information from ProMC/ProIO files 
+hs-ls       - list all files from a given data sample  
+hs-log      - extract the log file associated with ProMC/ProIO file 
+hs-ide      - run an editor and process analysis *.py script using ProMC/ProIO files 
+hs-run      - process analysis *.py script in a batch mode using ProMC/ProIO files 
+hs-exec     - execute external commands
+hs-extract  - extract N events from a file and write them to another file
+hs-pileup   - create a new file mixing signal events with pile-up events
+hs-proio    - a general viewer for ProIO files (independent of event model)
+hs-distiller- convert ProMC file to zip64 format (distiller) 
+hs-mirror   - mirror the a dataset with all tags      (for admins) 
+hs-index    - index files and prepare them for HepSim (for admins) 
+hs-help     - shows this help 
+hs-view     - view ProMC/ProIO file from the HepSim database (EVGEN level)
+hs-version  - checks the current hs-tools version
+
+Examples:
+========
+
+Find files
+----------
+hs-ls tev100pp_higgs_ttbar_mg5     # list files with the name tev100_higgs_ttbar_mg5
+hs-ls tev100pp_ttbar_mg5%rfast001  # list events for the reconstraction tag rfast001
+hs-find higgs                      # find samples with the word "higgs"
+
+Downloads:
+---------
+hs-get tev100pp_ttbar_mg5 data     # download EVGEN files to "data" 
+hs-get tev100pp_ttbar_mg5%rfast001 # download fast simulations for this sample 
+
+View: 
+----
+hs-view file.promc [or URL]      # look at the event record using GUI 
+hs-meta file.promc [or URL]      # meta information 
+
+
+Run over EVGEN files: 
+-------------------
+hs-run  test.py                  # run Jython script "test.py" in a batch mode
+hs-ide  test.py    [or URL]      # open script "test.py" in IDE and run it
+
+Look at http://atlaswww.hep.anl.gov/hepsim/ for more examples. 
+
+S.Chekanov (ANL)
+July, 2017

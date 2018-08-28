@@ -1,0 +1,36 @@
+#!/bin/bash
+# HepSim toolkit. S.Chekanov (ANL) 
+# Task: Validate HepSim files
+
+export HEPSIM_DIR=$(dirname $0)
+
+if which java >/dev/null; then
+    _java=java
+elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+    _java="$JAVA_HOME/bin/java"
+else
+    echo "No java detected! Please install it from https://java.com/download"; exit 0
+fi
+
+if [ "$#" -eq 0 ]; then
+    echo "Illegal number of parameters! Pass the file name o the disk (or URL)."
+fi
+
+if [ "$#" -le 0 ]; then
+    echo "Illegal number of parameters. Pass the file name!"
+    exit 0;
+fi
+
+FILE=$1
+echo "Extracting a logfile:"
+
+if [ "${FILE##*.}" = "promc" ]; then
+        # unzip -p $FILE logfile.txt
+         $_java -Xms1024m -Xmx1024m -cp $HEPSIM_DIR/browser_promc.jar hepsim.Log $FILE
+fi
+
+if [ "${FILE##*.}" = "proio" ]; then
+        $_java -Xms1024m -Xmx1024m -cp $HEPSIM_DIR/browser_proio.jar hepsimproio.Log $FILE
+fi
+
+

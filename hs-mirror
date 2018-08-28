@@ -1,0 +1,157 @@
+#!/bin/bash
+# Copyright (c) 2016 by S.Chekanov (chekanov@anl.gov). 
+# Mirror HepSim dataset. 
+
+
+"exec" "python2" "-Wignore" "$0" "$@"
+
+__version__ = '1.6'
+__author__  = 'Sergei Chekanov  (chekanov@anl.gov)'
+__doc__     = 'Mirror Hepsim'
+
+import getopt
+import os,sys,urllib,urllib2 
+import zipfile
+
+def  getFilesFromZip(name):
+    zf = zipfile.ZipFile(name, 'r')
+    # print zf.namelist()
+    filename="files"
+    data=[]
+    kbsize=[]
+    try:
+       lines = zf.open(filename).readlines()
+       for line in lines:
+           if line.find("#")>-1: continue
+           line=line.strip();
+           line=line.replace("/n","")
+           lines=line.split();
+           data.append(lines[1].replace("/n",""))
+           kbsize.append(int(lines[0].replace("/n","")));
+    except KeyError:
+       print 'ERROR: Did not find %s in zip file' % filename
+    return data,kbsize 
+
+def  getFiles(name):
+    data=[]
+    lines = open(name).readlines()
+    for line in lines:
+           if line.find("#")>-1: continue
+           line=line.strip();
+           line=line.replace("/n","")
+           data.append(line)
+    return data
+
+
+
+def main(argv):
+   inputfile = ''
+   outputfile = ''
+   whattoget=''
+   try:
+      opts, args = getopt.getopt(argv,"hi:o:t:",["ifile=","ofile=","type"])
+   except getopt.GetoptError:
+      print 'hs-mirror -i <input url> -o <output dir> -t <type>'
+      print 'if <type> is "evgen", only EVGEN files are downloaded'
+      print 'if <type> is not set, all files are downloaded'
+      sys.exit(2)
+   for opt, arg in opts:
+      if opt == '-h':
+         print 'hs-mirror -i <input url> -o <output dir>  -t <type>'
+         print 'if <type> is "evgen", only EVGEN files are downloaded'
+         print 'if <type> is not set, all files are downloaded'
+         sys.exit()
+      elif opt in ("-i", "--ifile"):
+         inputfile = arg
+      elif opt in ("-o", "--ofile"):
+         outputfile = arg
+      elif opt in ("-t", "--type"):
+         whattoget = arg
+
+   SOURCE_PAGE=inputfile
+   OUTPUT_DIR=outputfile
+   xdir=SOURCE_PAGE.split("/events/")
+   XDIR=OUTPUT_DIR+"/events/"+xdir[1]
+   print  "Source=",SOURCE_PAGE
+   print  "Mirror=",XDIR
+   if (len(whattoget)>1): print "-> Downloading only EVGEN files"
+   cmt="mkdir -p "+XDIR
+   os.system(cmt)
+   print cmt
+
+   print "Get EVGEN root directory"
+   activeLinkFound =False 
+   try:
+       f = urllib2.urlopen(urllib2.Request(SOURCE_PAGE+"/dirs.idx"))
+       activeLinkFound = True 
+   except:
+       activeLinkFound = False 
+   if (activeLinkFound): urllib.urlretrieve(SOURCE_PAGE+"/dirs.idx", XDIR+"/dirs.idx")
+   urllib.urlretrieve(SOURCE_PAGE+"/metadata.txt", XDIR+"/metadata.txt")
+   urllib.urlretrieve(SOURCE_PAGE+"/files.zip", XDIR+"/files.zip")
+   data,kbsize = getFilesFromZip(XDIR+"/files.zip")
+   totfiles=len(data);nn=1
+   for j in range(len(data)):
+     outf=XDIR+"/"+data[j] 
+     if os.path.exists(outf):
+            ksize=os.path.getsize(outf)
+            if (kbsize[j] == ksize): 
+                                print "   -> file exists. skip it"
+                                continue;
+
+     print "-> get ",j," Progress=",nn,"/",totfiles
+     urllib.urlretrieve(SOURCE_PAGE+"/"+data[j], outf)
+     nn=nn+1
+
+   dirs=getFiles(XDIR+"/dirs.idx")
+   for m in dirs:
+    XDIR1= XDIR+m
+    cmt="mkdir -p "+XDIR1
+    os.system(cmt)
+
+    print "dir=",XDIR1
+    # macro files
+    if (m.find("macros")>-1):
+       urllib.urlretrieve(SOURCE_PAGE+"/"+m+"/files", XDIR1+"/files")
+       xfiles=getFiles(XDIR1+"/files")
+       print "macro files=",xfiles 
+       for mm in xfiles:
+            urllib.urlretrieve(SOURCE_PAGE+"/"+m+"/"+mm, XDIR1+"/"+mm)
+
+    else: 
+     if (whattoget.find("evgen")<0): # this is data directory 
+      urllib.urlretrieve(SOURCE_PAGE+"/"+m+"/info.txt", XDIR1+"/info.txt")
+
+      # check if subdirectory file exists
+      activeLinkFound = False
+      try:
+         f = urllib2.urlopen(urllib2.Request(SOURCE_PAGE+"/"+m+"/dirs.idx"))
+         activeLinkFound = True
+      except:
+         activeLinkFound = False
+      if (activeLinkFound): urllib.urlretrieve(SOURCE_PAGE+"/"+m+"/dirs.idx", XDIR1+"/dirs.idx")
+
+      urllib.urlretrieve(SOURCE_PAGE+"/"+m+"/files.zip", XDIR1+"/files.zip")
+      data,kbsize = getFilesFromZip(XDIR1+"/files.zip")
+      totfiles=len(data);nn=1
+      for j in range(len(data)):
+         outf=XDIR1+"/"+data[j]
+         if os.path.exists(outf):
+            ksize=os.path.getsize(outf)
+            if (kbsize[j] == ksize):
+                                print "   -> file exists. skip it"
+                                continue;
+         print "  -> get ",data[j]," Progress=",nn,"/",totfiles
+         urllib.urlretrieve(SOURCE_PAGE+"/"+m+"/"+data[j], outf)
+         nn=nn+1
+   print "Dataset was mirrored in "+XDIR
+
+
+
+if __name__ == "__main__":
+   if (len(sys.argv)) <2:
+     print "No arguments. Please use \"hs-mirror -h\" for help" 
+   else:
+     main(sys.argv[1:])
+
+
